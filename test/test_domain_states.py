@@ -3,6 +3,8 @@ from iii_drone_contracts import (
     ControlDomainState,
     DomainName,
     EventSource,
+    MissionDomainState,
+    MissionModeRegistryEntry,
     OperatorEvent,
     OperatorStatePatch,
     OperatorStateSnapshot,
@@ -75,3 +77,26 @@ def test_events_domain_supports_runtime_and_local_sources():
         EventSource.RUNTIME,
         EventSource.FRONTEND,
     ]
+
+
+def test_mission_domain_has_typed_mode_registry_entries():
+    state = MissionDomainState(
+        active_spec_id="inspection.yaml",
+        required_modes_registered=True,
+        modes=[
+            MissionModeRegistryEntry(
+                mode_key="inspection_demo",
+                display_name="Inspection Demo",
+                mode_id=30,
+                registered=True,
+                active=True,
+                tree_running=True,
+                freshness="fresh",
+            )
+        ],
+    )
+
+    payload = state.model_dump(mode="json")
+    assert payload["modes"][0]["mode_key"] == "inspection_demo"
+    assert payload["modes"][0]["mode_id"] == 30
+    assert payload["modes"][0]["tree_success"] is None

@@ -46,3 +46,10 @@ The workspace full-suite runner also performs this check:
 ```bash
 scripts/workspace/run_iii_test_suite.sh
 ```
+
+## Compatibility
+
+The API remains `v2alpha1`; typed mission-mode registry fields are additive to
+`MissionDomainState`. Clients must tolerate absent or empty `modes` while a
+runtime built against the previous ROS interface is being upgraded. Generated
+TypeScript must be refreshed in the same change as Python contract updates.

@@ -31,6 +31,9 @@ class ParameterConstraint(ContractModel):
     minimum: float | int | None = None
     maximum: float | int | None = None
     step: float | int | None = None
+    minimum_expression: str | None = None
+    maximum_expression: str | None = None
+    step_expression: str | None = None
     choices: list[Any] | None = None
     regex: str | None = None
     unit: str | None = None
@@ -42,12 +45,17 @@ class ParameterDefinition(ContractModel):
     name: str
     value_type: ParameterValueType
     current_value: Any
+    active_value: Any | None = None
+    persisted_value: Any | None = None
     loaded_value: Any | None = None
     default_value: Any | None = None
     description: str | None = None
     constraints: ParameterConstraint | None = None
     restart_required: RestartRequired = RestartRequired.NONE
     readonly: bool = False
+    constant: bool = False
+    apply_allowed: bool = False
+    apply_rejection_reasons: list[str] = Field(default_factory=list)
     reference: str | None = None
 
 
@@ -74,18 +82,23 @@ class SnapshotSummary(ContractModel):
 
 
 class ConfigurationStatus(ContractModel):
+    configuration_server_available: bool = False
     pending_edits: bool = False
     unsaved: bool = False
     non_default: bool = False
     loaded_snapshot_id: str | None = None
     default_snapshot_id: str | None = None
-    badges: list[Literal["Pending edits", "Unsaved", "Non-default"]] = Field(default_factory=list)
+    pending_restart: bool = False
+    pending_constant_names: list[str] = Field(default_factory=list)
+    badges: list[Literal["Pending edits", "Unsaved", "Non-default", "Restart required"]] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def encode_badge_precedence(self):
         badges: list[str] = []
         if self.pending_edits:
             badges.append("Pending edits")
+        if self.pending_restart:
+            badges.append("Restart required")
         if self.unsaved:
             badges.append("Unsaved")
         elif self.non_default:
@@ -115,6 +128,7 @@ class ParameterApplyResult(ContractModel):
     success: bool
     message: str | None = None
     applied_value: Any | None = None
+    persisted_value: Any | None = None
     restart_required: RestartRequired = RestartRequired.NONE
 
 

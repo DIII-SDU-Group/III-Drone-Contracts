@@ -28,7 +28,11 @@ def test_manifest_supports_grouping_constraints_and_restart_metadata():
         current_value=1.5,
         loaded_value=1.2,
         default_value=1.0,
-        constraints=ParameterConstraint(minimum=0.5, maximum=5.0, unit="m"),
+        constraints=ParameterConstraint(
+            minimum=0.5,
+            maximum_expression="/flight/ceiling_m - 0.5",
+            unit="m",
+        ),
         restart_required=RestartRequired.NODE,
         description="Takeoff height.",
     )
@@ -48,6 +52,7 @@ def test_manifest_supports_grouping_constraints_and_restart_metadata():
 
     loaded_parameter = actual.nodes[0].groups[0].parameters[0]
     assert loaded_parameter.constraints.unit == "m"
+    assert loaded_parameter.constraints.maximum_expression == "/flight/ceiling_m - 0.5"
     assert loaded_parameter.restart_required == RestartRequired.NODE
     assert loaded_parameter.default_value == 1.0
 

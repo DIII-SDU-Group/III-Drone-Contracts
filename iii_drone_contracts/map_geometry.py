@@ -77,6 +77,24 @@ class PolylineLayer(ContractModel):
     updated_at: datetime | None = None
 
 
+class MapPylonEndpoint(ContractModel):
+    pylon_id: int
+    position: Point2D
+    label: str
+    source_status: MapSourceStatus = MapSourceStatus.MISSING
+    updated_at: datetime | None = None
+
+
+class MapTransportDiagnostics(ContractModel):
+    serialized_bytes: int = 0
+    geometry_point_count: int = 0
+    publish_rate_limit_hz: float = 0.0
+    estimated_max_kbps: float = 0.0
+    live_source_age_ms: float | None = None
+    drone_pose_age_ms: float | None = None
+    stale_after_ms: float = 0.0
+
+
 class MapState(DomainMetadata):
     projection_options: list[MapProjection] = Field(
         default_factory=lambda: [MapProjection.POWERLINE_ORTHOGONAL, MapProjection.TOP_DOWN]
@@ -91,8 +109,21 @@ class MapState(DomainMetadata):
     target_history: list[Point2D] = Field(default_factory=list)
     trajectory: PolylineLayer | None = None
     drone_trail: PolylineLayer | None = None
+    pylon_endpoints: list[MapPylonEndpoint] = Field(default_factory=list)
+    inferred_corridor: PolylineLayer | None = None
+    capture_preview: TargetState | None = None
+    top_down_live_conductors: list[ConductorGeometry] = Field(default_factory=list)
+    top_down_recent_live_conductors: list[ConductorGeometry] = Field(default_factory=list)
+    top_down_stored_overview_conductors: list[ConductorGeometry] = Field(default_factory=list)
+    top_down_drone_pose: PoseProjection | None = None
+    top_down_target_state: TargetState = Field(default_factory=TargetState)
+    top_down_target_history: list[Point2D] = Field(default_factory=list)
+    top_down_trajectory: PolylineLayer | None = None
+    top_down_drone_trail: PolylineLayer | None = None
+    top_down_auto_fit_bounds: Bounds2D | None = None
     auto_fit_bounds: Bounds2D | None = None
     generated_at: datetime = Field(default_factory=utc_now)
+    transport: MapTransportDiagnostics = Field(default_factory=MapTransportDiagnostics)
 
     @classmethod
     def empty(cls, reason: str = "no map sources available") -> "MapState":

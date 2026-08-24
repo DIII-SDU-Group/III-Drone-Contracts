@@ -35,6 +35,7 @@ def test_stable_command_id_values():
         CommandId.POWERLINE_OVERVIEW_UPDATE: "powerline.overview.update",
         CommandId.CONFIGURATION_APPLY: "configuration.apply",
         CommandId.RUNTIME_BOOT: "runtime.boot",
+        CommandId.RUNTIME_SYSTEM_START: "runtime.system_start",
         CommandId.RUNTIME_SERVICE_RESTART: "runtime.service.restart",
         CommandId.ROSBAG_START: "rosbag.start",
         CommandId.ROSBAG_STOP: "rosbag.stop",

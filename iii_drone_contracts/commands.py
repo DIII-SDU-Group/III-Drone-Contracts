@@ -12,6 +12,9 @@ class CommandId(str, Enum):
     PX4_HOLD = "px4.hold"
 
     MISSION_ACTIVATE = "mission.activate"
+    MISSION_RECHARGE_NOW = "mission.recharge_now"
+    MISSION_STAY_ON_CABLE = "mission.stay_on_cable"
+    MISSION_LEAVE_CABLE_NOW = "mission.leave_cable_now"
     CUSTOM_OPERATION_ACTIVATE = "custom_operation.activate"
 
     CUSTOM_OPERATION_VALIDATE = "custom_operation.validate"
@@ -35,6 +38,8 @@ class CommandId(str, Enum):
     PERCEPTION_PL_MAPPER_FREEZE = "perception.pl_mapper.freeze"
     PERCEPTION_PL_MAPPER_PAUSE = "perception.pl_mapper.pause"
     POWERLINE_OVERVIEW_UPDATE = "powerline.overview.update"
+    PYLON_CAPTURE_CURRENT = "pylon.capture_current"
+    PYLON_OVERVIEW_CLEAR = "pylon.overview.clear"
 
     CONFIGURATION_APPLY = "configuration.apply"
     CONFIGURATION_SAVE_SNAPSHOT = "configuration.snapshot.save"
@@ -44,9 +49,11 @@ class CommandId(str, Enum):
     CONFIGURATION_LIST_SNAPSHOTS = "configuration.snapshot.list"
 
     RUNTIME_BOOT = "runtime.boot"
+    RUNTIME_SYSTEM_START = "runtime.system_start"
     RUNTIME_START = "runtime.start"
     RUNTIME_STOP = "runtime.stop"
     RUNTIME_RESTART = "runtime.restart"
+    RUNTIME_PARAMETER_COLD_RESTART = "runtime.parameter_cold_restart"
     RUNTIME_SHUTDOWN = "runtime.shutdown"
     RUNTIME_SERVICE_START = "runtime.service.start"
     RUNTIME_SERVICE_STOP = "runtime.service.stop"
