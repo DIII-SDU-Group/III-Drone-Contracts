@@ -234,6 +234,8 @@ class MissionSpecificationIdentity(ContractModel):
     catalog_id: str | None = None
     catalog_hash: str | None = None
     entry_hash: str | None = None
+    specification_asset_id: str | None = None
+    behavior_tree_asset_ids: list[str] = Field(default_factory=list)
     default_catalog_id: str | None = None
     classification: Literal["production", "experimental", "test", "legacy", "unknown"] = "unknown"
     compatible_profiles: list[str] = Field(default_factory=list)
