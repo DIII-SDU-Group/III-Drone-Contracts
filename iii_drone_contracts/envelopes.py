@@ -231,12 +231,17 @@ class InspectionStartEligibility(ContractModel):
 
 
 class MissionSpecificationIdentity(ContractModel):
-    active_path: str | None = None
-    canonical_path: str | None = None
-    label: str | None = None
-    content_hash: str | None = None
-    canonical_loaded: bool | None = None
-    configuration_profile: str = "unknown"
+    catalog_id: str | None = None
+    catalog_hash: str | None = None
+    entry_hash: str | None = None
+    default_catalog_id: str | None = None
+    classification: Literal["production", "experimental", "test", "legacy", "unknown"] = "unknown"
+    compatible_profiles: list[str] = Field(default_factory=list)
+    active_profile: str = "unknown"
+    temporary_override: bool = False
+    experimental: bool = False
+    experimental_warning: str | None = None
+    catalog_ready: bool = False
     load_error: str | None = None
 
 
