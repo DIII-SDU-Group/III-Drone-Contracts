@@ -14,6 +14,7 @@ CAPTURE_SCHEMA = "iii.configuration-capture/v1"
 RECEIPT_SCHEMA = "iii.configuration-capture-receipt/v1"
 JOURNAL_BATCH_SCHEMA = "iii.configuration-journal-batch/v1"
 WAL_SCHEMA = "iii.configuration-tuning-wal-entry/v1"
+RUNTIME_PROFILES = frozenset({"real", "sim", "hil", "opti_track"})
 
 
 class ConfigurationCaptureError(RuntimeError):
@@ -101,7 +102,7 @@ def validate_journal_batch(
         or not SHA256.fullmatch(str(session.get("session_id", "")))
         or not SHA256.fullmatch(str(session.get("baseline_id", "")))
         or not SHA256.fullmatch(str(session.get("manifest_id", "")))
-        or session.get("runtime_profile") not in {"real", "sim"}
+        or session.get("runtime_profile") not in RUNTIME_PROFILES
         or any(
             not isinstance(session.get(field), str) or not session[field]
             for field in (
@@ -268,7 +269,7 @@ def _validate_capture_source(value: Mapping[str, Any]) -> None:
     for field in ("target_id", "release_id", "workspace_id"):
         if not isinstance(value.get(field), str) or not value[field]:
             raise ConfigurationCaptureError(f"configuration capture {field} is invalid")
-    if value.get("runtime_profile") not in {"real", "sim"}:
+    if value.get("runtime_profile") not in RUNTIME_PROFILES:
         raise ConfigurationCaptureError(
             "configuration capture runtime_profile is invalid"
         )

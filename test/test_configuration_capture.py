@@ -40,7 +40,7 @@ def source(*, profile: str = "real") -> dict:
             "/**": {"ros__parameters": {"/control/gain": 2.0}},
             "/sensor/example": {"ros__parameters": {"frame_id": "sensor"}},
         },
-        "target_id": "drone-1" if profile == "real" else "sim",
+        "target_id": "sim" if profile == "sim" else "drone-1",
         "runtime_profile": profile,
         "release_id": "b" * 64,
         "workspace_id": "workspace-test",
@@ -60,7 +60,7 @@ def source(*, profile: str = "real") -> dict:
     }
 
 
-@pytest.mark.parametrize("profile", ["real", "sim"])
+@pytest.mark.parametrize("profile", ["real", "sim", "hil", "opti_track"])
 def test_sealed_capture_and_receipt_are_stable_and_offline_verifiable(profile):
     first = seal_capture(source(profile=profile))
     second = seal_capture(source(profile=profile))
@@ -137,7 +137,10 @@ def _entry(sequence: int, previous: str | None) -> dict:
     return value
 
 
-def test_journal_batch_requires_exact_local_sequence_and_checksum_continuity():
+@pytest.mark.parametrize("runtime_profile", ["real", "sim", "hil", "opti_track"])
+def test_journal_batch_requires_exact_local_sequence_and_checksum_continuity(
+    runtime_profile,
+):
     one = _entry(1, None)
     two = _entry(2, one["checksum"])
     batch = {
@@ -146,7 +149,7 @@ def test_journal_batch_requires_exact_local_sequence_and_checksum_continuity():
             "session_id": "d" * 64,
             "baseline_id": "e" * 64,
             "target_id": "drone-1",
-            "runtime_profile": "real",
+            "runtime_profile": runtime_profile,
             "release_id": "b" * 64,
             "workspace_id": "workspace-test",
             "manifest_id": "c" * 64,
