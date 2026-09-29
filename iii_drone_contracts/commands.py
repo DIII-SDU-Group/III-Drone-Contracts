@@ -15,6 +15,10 @@ class CommandId(str, Enum):
     MISSION_RECHARGE_NOW = "mission.recharge_now"
     MISSION_STAY_ON_CABLE = "mission.stay_on_cable"
     MISSION_LEAVE_CABLE_NOW = "mission.leave_cable_now"
+    MISSION_CATALOG_STATUS = "mission.catalog.status"
+    MISSION_CATALOG_LIST = "mission.catalog.list"
+    MISSION_CATALOG_SHOW = "mission.catalog.show"
+    MISSION_CATALOG_SELECT = "mission.catalog.select"
     CUSTOM_OPERATION_ACTIVATE = "custom_operation.activate"
 
     CUSTOM_OPERATION_VALIDATE = "custom_operation.validate"

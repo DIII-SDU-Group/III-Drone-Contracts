@@ -59,7 +59,10 @@ def test_manifest_supports_grouping_constraints_and_restart_metadata():
 
 def test_apply_results_return_per_parameter_success_and_error():
     request = ConfigurationApplyRequest(
-        edits=[ParameterEdit(node_id="configuration_server", name="takeoff_height", value=2.0)]
+        edits=[ParameterEdit(node_id="configuration_server", name="takeoff_height", value=2.0)],
+        request_id="request-1",
+        expected_revision=3,
+        operator_id="operator-1",
     )
     response = ConfigurationApplyResponse(
         ok=False,
@@ -74,6 +77,7 @@ def test_apply_results_return_per_parameter_success_and_error():
     )
 
     assert ConfigurationApplyRequest.model_validate_json(request.model_dump_json()).edits[0].value == 2.0
+    assert ConfigurationApplyRequest.model_validate_json(request.model_dump_json()).expected_revision == 3
     assert ConfigurationApplyResponse.model_validate_json(response.model_dump_json()).results[0].message == "out of range"
 
 
