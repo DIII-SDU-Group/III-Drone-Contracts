@@ -55,8 +55,9 @@ runtime built against the previous ROS interface is being upgraded. Generated
 TypeScript must be refreshed in the same change as Python contract updates.
 
 Profile capabilities (`ProfileCapabilities` on `ApiIdentity.capabilities` and
-`SystemDomainState.capabilities`), `ErrorCode.PROFILE_RESTRICTED`, and the
-vehicle `external_vision` block are also additive. An absent `capabilities`
+`SystemDomainState.capabilities`, including `disarmed_mission_activation`),
+`ErrorCode.PROFILE_RESTRICTED`, and the vehicle `external_vision` block are
+also additive. An absent `capabilities`
 means every operator surface is available; an absent `external_vision` means
 the profile does not position from external vision. A runtime rejects a
 command its profile does not support with `profile_restricted` and the message

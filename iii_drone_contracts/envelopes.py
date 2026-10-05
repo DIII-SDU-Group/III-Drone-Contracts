@@ -42,6 +42,9 @@ class ProfileCapabilities(ContractModel):
     simulation_available: bool = False
     # Allowed custom operation names; None allows every supported operation.
     custom_operations: list[str] | None = None
+    # A mission mode whose specification allows it may start from a disarmed,
+    # landed aircraft; the runtime's preflight then judges arming readiness.
+    disarmed_mission_activation: bool = False
 
 
 class ApiIdentity(ContractModel):

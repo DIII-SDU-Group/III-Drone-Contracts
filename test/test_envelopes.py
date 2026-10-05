@@ -46,18 +46,21 @@ def test_api_identity_advertises_optional_profile_capabilities():
             overviews_available=False,
             cable_intents_available=False,
             custom_operations=["fly_to_position", "follow_waypoint_path", "hover"],
+            disarmed_mission_activation=True,
         ),
     )
 
     actual = _round_trip(restricted)
 
     assert actual.capabilities.payload_available is False
+    assert actual.capabilities.disarmed_mission_activation is True
     assert actual.capabilities.custom_operations == ["fly_to_position", "follow_waypoint_path", "hover"]
     # A runtime that advertises nothing (or only defaults) restricts nothing.
     assert _round_trip(ApiIdentity(runtime_id="sim-1", runtime_name="sim")).capabilities is None
     default = ProfileCapabilities()
     assert default.payload_available and default.cable_intents_available
     assert default.custom_operations is None
+    assert default.disarmed_mission_activation is False
 
 
 def test_command_and_service_envelopes_round_trip():
