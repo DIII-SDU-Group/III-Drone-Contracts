@@ -12,29 +12,44 @@ from iii_drone_contracts.px4_parameters import (
     parse_baseline,
 )
 
-SCRIPT = """# comment
-param set UXRCE_DDS_PRT 8888
-param set UXRCE_DDS_DOM_ID 42
+SCRIPT = """# PX4 parameter baseline
+# MAV ID\tCOMPONENT ID\tPARAM NAME\tVALUE\tTYPE
+1\t1\tUXRCE_DDS_PRT\t8888\t6
+1\t1\tUXRCE_DDS_DOM_ID\t42\t6
 
-param set EKF2_EVP_NOISE 0.05
-param save
-reboot
+# A float32 parameter although its value is whole.
+1\t1\tEKF2_EV_DELAY\t30.0\t9
+1\t1\tEKF2_EVP_NOISE\t0.05\t9
 """
 
 
-def test_a_baseline_is_its_param_set_lines_with_numeric_values():
-    assert parse_baseline(SCRIPT) == {
+def test_a_baseline_is_a_qgroundcontrol_parameter_file_typed_as_px4_stores_it():
+    parameters = parse_baseline(SCRIPT)
+    assert parameters == {
         "UXRCE_DDS_PRT": 8888,
         "UXRCE_DDS_DOM_ID": 42,
+        "EKF2_EV_DELAY": 30.0,
         "EKF2_EVP_NOISE": 0.05,
     }
+    assert isinstance(parameters["EKF2_EV_DELAY"], float)
+    assert isinstance(parameters["UXRCE_DDS_PRT"], int)
 
 
 @pytest.mark.parametrize(
     "script",
-    ["", "param set A 1\nparam set A 2\n", "param set A\n", "param set A one\n", "mavlink start\n"],
+    [
+        "",
+        "# only a comment\n",
+        "1\t1\tA\t1\t6\n1\t1\tA\t2\t6\n",
+        "1\t1\tA\t1\n",
+        "1\t1\tA\tone\t6\n",
+        "1\t1\tA\t1.5\t6\n",
+        "1\t1\tA\t1\t2\n",
+        "1\t1\tA_NAME_LONGER_THAN_16\t1\t6\n",
+        "param set A 1\n",
+    ],
 )
-def test_anything_but_plain_param_set_lines_is_refused(script):
+def test_anything_but_typed_parameter_rows_is_refused(script):
     with pytest.raises(BaselineError):
         parse_baseline(script)
 
@@ -64,4 +79,8 @@ def test_values_compare_across_px4_int_and_float_storage():
 
 def test_only_profiles_that_fly_the_flight_controller_are_checked_at_boot():
     assert CHECKED_PROFILES == {"real", "opti_track"}
-    assert set(BASELINE_FILES) == {"real", "opti_track", "hil"}
+    assert BASELINE_FILES == {
+        "real": "real.params",
+        "opti_track": "opti_track.params",
+        "hil": "hil.params",
+    }

@@ -1,8 +1,9 @@
 """PX4 parameter baselines per runtime profile.
 
 The baseline of a profile is the set of PX4 parameters the III stack relies on
-there. Its single source is the profile's NSH script in ``deployment/px4``,
-which can also be run by hand in a PX4 console. `iii px4 param-baseline`
+there. Each lives standalone in ``deployment/px4/parameters/<profile>.params``,
+a QGroundControl parameter file: tab-separated ``MAV ID, COMPONENT ID, PARAM
+NAME, VALUE, TYPE`` rows and ``#`` comment lines. `iii px4 param-baseline`
 applies it, and the Pi checks it before every system boot and start.
 """
 
@@ -14,51 +15,58 @@ from typing import Mapping
 
 Number = int | float
 
-# Runtime profile -> NSH baseline in deployment/px4. The HIL baseline is for
-# the physical flight controller, which HIL keeps connected but does not fly.
+# Runtime profile -> parameter file. The HIL baseline is for the physical
+# flight controller, which HIL keeps connected but does not fly.
 BASELINE_FILES: Mapping[str, str] = {
-    "hil": "hil-ethernet.nsh",
-    "opti_track": "opti-track.nsh",
-    "real": "real.nsh",
+    "hil": "hil.params",
+    "opti_track": "opti_track.params",
+    "real": "real.params",
 }
+# Where the files live in the workspace, on the ground computer and on the Pi.
+BASELINE_DIRECTORY = "deployment/px4/parameters"
 # Profiles whose flying PX4 is the physical flight controller: the Pi checks
 # their baseline before every system boot and start.
 CHECKED_PROFILES = frozenset({"real", "opti_track"})
-# Follows the stack's ROS domain provisioned on the Pi, not the script's value.
+# Follows the stack's ROS domain provisioned on the Pi, not the file's value.
 STACK_DOMAIN_PARAMETER = "UXRCE_DDS_DOM_ID"
 APPLY_COMMAND = "iii px4 param-baseline --profile {profile}"
+# MAVLink parameter types PX4 uses.
+_INT32 = "6"
+_REAL32 = "9"
 
 
 class BaselineError(ValueError):
-    """A baseline script is missing or is not a plain list of `param set` lines."""
-
-
-def _number(text: str) -> Number:
-    try:
-        return int(text, 10)
-    except ValueError:
-        return float(text)
+    """A baseline file is missing or is not a QGroundControl parameter file."""
 
 
 def parse_baseline(text: str) -> dict[str, Number]:
-    """The parameters an NSH baseline sets, in order."""
+    """The parameters of a baseline file, typed as PX4 stores them."""
 
     parameters: dict[str, Number] = {}
     for line in text.splitlines():
-        words = line.split()
-        if not words or words[0].startswith("#") or words in (["param", "save"], ["reboot"]):
+        if not line.strip() or line.lstrip().startswith("#"):
             continue
-        if len(words) != 4 or words[:2] != ["param", "set"]:
-            raise BaselineError(f"not a `param set NAME VALUE` line: {line!r}")
-        name = words[2]
+        fields = line.split("\t")
+        if len(fields) != 5:
+            raise BaselineError(
+                f"not a `MAV ID, COMPONENT ID, NAME, VALUE, TYPE` row: {line!r}"
+            )
+        name, value, kind = fields[2].strip(), fields[3].strip(), fields[4].strip()
+        if not name or len(name) > 16:
+            raise BaselineError(f"invalid PX4 parameter name {name!r}")
         if name in parameters:
             raise BaselineError(f"{name} is set twice")
         try:
-            parameters[name] = _number(words[3])
+            if kind == _INT32:
+                parameters[name] = int(value, 10)
+            elif kind == _REAL32:
+                parameters[name] = float(value)
+            else:
+                raise BaselineError(f"{name} has the unsupported type {kind!r}")
         except ValueError:
-            raise BaselineError(f"{name} has a non-numeric value {words[3]!r}") from None
+            raise BaselineError(f"{name} has the invalid value {value!r}") from None
     if not parameters:
-        raise BaselineError("the baseline sets no parameter")
+        raise BaselineError("the baseline holds no parameter")
     return parameters
 
 
