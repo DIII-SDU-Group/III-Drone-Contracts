@@ -11,6 +11,7 @@ from iii_drone_contracts import (
     DomainName,
     GenericDomainState,
     OperatorEvent,
+    ProfileCapabilities,
     OperatorStatePatch,
     OperatorStateSnapshot,
     ServiceCallRequest,
@@ -31,6 +32,35 @@ def test_api_identity_includes_version_metadata():
 
     assert actual.compatibility.api_version == API_VERSION
     assert actual.runtime_id == "sim-1"
+
+
+def test_api_identity_advertises_optional_profile_capabilities():
+    restricted = ApiIdentity(
+        runtime_id="iii-runtime",
+        runtime_name="III Runtime",
+        profile="opti_track",
+        capabilities=ProfileCapabilities(
+            profile="opti_track",
+            payload_available=False,
+            perception_available=False,
+            overviews_available=False,
+            cable_intents_available=False,
+            custom_operations=["fly_to_position", "follow_waypoint_path", "hover"],
+            disarmed_mission_activation=True,
+        ),
+    )
+
+    actual = _round_trip(restricted)
+
+    assert actual.capabilities.payload_available is False
+    assert actual.capabilities.disarmed_mission_activation is True
+    assert actual.capabilities.custom_operations == ["fly_to_position", "follow_waypoint_path", "hover"]
+    # A runtime that advertises nothing (or only defaults) restricts nothing.
+    assert _round_trip(ApiIdentity(runtime_id="sim-1", runtime_name="sim")).capabilities is None
+    default = ProfileCapabilities()
+    assert default.payload_available and default.cable_intents_available
+    assert default.custom_operations is None
+    assert default.disarmed_mission_activation is False
 
 
 def test_command_and_service_envelopes_round_trip():
@@ -64,6 +94,21 @@ def test_command_responses_and_rejections_validate():
 
     assert not actual.accepted
     assert actual.rejection.code == ErrorCode.STALE_STATE
+
+
+def test_profile_restricted_rejection_is_a_typed_error_code():
+    rejection = CommandRejection(
+        code=ErrorCode.PROFILE_RESTRICTED,
+        message="payload control is not available in the opti_track profile",
+        request_id="req-7",
+        command_id="payload.gripper.open",
+    )
+
+    actual = _round_trip(rejection)
+
+    assert ErrorCode.PROFILE_RESTRICTED.value == "profile_restricted"
+    assert actual.code == "profile_restricted"
+    assert actual.retryable is False
 
 
 def test_action_service_ws_and_event_envelopes_round_trip():

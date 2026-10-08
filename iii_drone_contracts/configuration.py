@@ -90,6 +90,26 @@ class ConfigurationStatus(ContractModel):
     default_snapshot_id: str | None = None
     pending_restart: bool = False
     pending_constant_names: list[str] = Field(default_factory=list)
+    pending_boot_values: dict[str, Any] = Field(default_factory=dict)
+    tuning_session_id: str | None = None
+    tuning_baseline_id: str | None = None
+    tuning_target_id: str | None = None
+    tuning_runtime_profile: str | None = None
+    tuning_release_id: str | None = None
+    tuning_workspace_id: str | None = None
+    tuning_manifest_id: str | None = None
+    tuning_revision: int = 0
+    tuning_journal_sequence: int = 0
+    tuning_journal_checksum: str | None = None
+    tuning_created_at: datetime | None = None
+    tuning_updated_at: datetime | None = None
+    configuration_divergent: bool = False
+    divergent_observations: dict[str, Any] = Field(default_factory=dict)
+    mirror_state: Literal["not-required", "degraded", "current"] = "not-required"
+    mirror_ack_revision: int | None = None
+    mirror_ack_sequence: int | None = None
+    mirror_ack_checksum: str | None = None
+    mirror_error: str | None = None
     badges: list[Literal["Pending edits", "Unsaved", "Non-default", "Restart required"]] = Field(default_factory=list)
 
     @model_validator(mode="after")
@@ -134,12 +154,20 @@ class ParameterApplyResult(ContractModel):
 
 class ConfigurationApplyRequest(ContractModel):
     edits: list[ParameterEdit]
+    request_id: str | None = None
+    expected_revision: int | None = Field(default=None, ge=0)
+    operator_id: str | None = None
 
 
 class ConfigurationApplyResponse(ContractModel):
     ok: bool
     results: list[ParameterApplyResult]
     status: ConfigurationStatus = Field(default_factory=ConfigurationStatus)
+    session_id: str | None = None
+    transaction_id: str | None = None
+    revision: int | None = None
+    transaction_status: str | None = None
+    idempotent_replay: bool = False
 
 
 class SnapshotSaveRequest(ContractModel):
