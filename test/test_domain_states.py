@@ -3,12 +3,15 @@ from iii_drone_contracts import (
     ControlDomainState,
     DomainName,
     EventSource,
+    ExternalVisionState,
     MissionDomainState,
     MissionModeRegistryEntry,
     OperatorEvent,
     OperatorStatePatch,
     OperatorStateSnapshot,
     PayloadDomainState,
+    ProfileCapabilities,
+    SystemDomainState,
     VehicleDomainState,
 )
 
@@ -100,3 +103,48 @@ def test_mission_domain_has_typed_mode_registry_entries():
     assert payload["modes"][0]["mode_key"] == "inspection_demo"
     assert payload["modes"][0]["mode_id"] == 30
     assert payload["modes"][0]["tree_success"] is None
+
+
+def test_vehicle_external_vision_block_is_optional_and_round_trips():
+    assert VehicleDomainState().external_vision is None
+    state = VehicleDomainState(
+        external_vision=ExternalVisionState(
+            ready=True,
+            freshness="fresh",
+            relay_level="ok",
+            relay_freshness="fresh",
+            relay_stale=False,
+            input_rate_hz=120.0,
+            last_input_age_ms=8.0,
+            origin_sent=True,
+            rigid_body_id="1",
+            ev_pos_fused=True,
+            ev_hgt_fused=True,
+            ev_yaw_fused=True,
+            fusion_freshness="fresh",
+            origin_valid=True,
+            origin_freshness="fresh",
+        )
+    )
+
+    actual = VehicleDomainState.model_validate_json(state.model_dump_json()).external_vision
+
+    assert actual.ready is True
+    assert actual.relay_level == "ok"
+    assert (actual.ev_pos_fused, actual.ev_hgt_fused, actual.ev_yaw_fused) == (True, True, True)
+    assert ExternalVisionState().relay_level == "unknown"
+    assert ExternalVisionState().freshness == "unknown"
+
+
+def test_system_domain_carries_profile_capabilities_to_operator_clients():
+    snapshot = OperatorStateSnapshot()
+    assert snapshot.system.capabilities is None
+    snapshot.system = SystemDomainState(
+        capabilities=ProfileCapabilities(profile="opti_track", payload_available=False, custom_operations=["hover"])
+    )
+
+    actual = OperatorStateSnapshot.model_validate_json(snapshot.model_dump_json()).system.capabilities
+
+    assert actual.profile == "opti_track"
+    assert actual.payload_available is False
+    assert actual.custom_operations == ["hover"]

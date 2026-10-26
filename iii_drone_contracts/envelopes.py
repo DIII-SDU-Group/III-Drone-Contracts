@@ -25,11 +25,34 @@ class ApiCompatibility(ContractModel):
     schema_revision: str = "v2alpha1"
 
 
+class ProfileCapabilities(ContractModel):
+    """Operator surfaces the active runtime profile supports.
+
+    A reduced profile (``opti_track`` flies without payload, perception,
+    overviews or a cable) rejects the other commands with
+    ``ErrorCode.PROFILE_RESTRICTED``; clients hide or disable them. A runtime
+    that does not advertise capabilities supports every surface.
+    """
+
+    profile: str | None = None
+    payload_available: bool = True
+    perception_available: bool = True
+    overviews_available: bool = True
+    cable_intents_available: bool = True
+    simulation_available: bool = False
+    # Allowed custom operation names; None allows every supported operation.
+    custom_operations: list[str] | None = None
+    # A mission mode whose specification allows it may start from a disarmed,
+    # landed aircraft; the runtime's preflight then judges arming readiness.
+    disarmed_mission_activation: bool = False
+
+
 class ApiIdentity(ContractModel):
     runtime_id: str
     runtime_name: str
     profile: str | None = None
     host_label: str | None = None
+    capabilities: ProfileCapabilities | None = None
     compatibility: ApiCompatibility = Field(default_factory=ApiCompatibility)
     server_time: datetime = Field(default_factory=utc_now)
 
@@ -40,6 +63,7 @@ class ErrorCode(str, Enum):
     CONFLICT = "conflict"
     INVALID_REQUEST = "invalid_request"
     UNSUPPORTED = "unsupported"
+    PROFILE_RESTRICTED = "profile_restricted"
     STALE_STATE = "stale_state"
     DEGRADED_STATE = "degraded_state"
     HANDLER_UNAVAILABLE = "handler_unavailable"
@@ -163,6 +187,39 @@ class SystemDomainState(DomainMetadata):
     daemon_state: str = "unknown"
     booted: bool | None = None
     active: bool | None = None
+    capabilities: ProfileCapabilities | None = None
+
+
+class ExternalVisionState(ContractModel):
+    """Motion-capture positioning health for a PX4 that fuses external vision.
+
+    Combines the pose relay's own health report with PX4's estimator fusion
+    flags and its EKF global origin. Freshness is judged by the runtime from
+    when each source was last received.
+    """
+
+    ready: bool = False
+    freshness: Freshness = Freshness.UNKNOWN
+    degraded_reason: str | None = None
+    relay_level: Literal["ok", "warn", "error", "stale", "unknown"] = "unknown"
+    relay_message: str | None = None
+    relay_freshness: Freshness = Freshness.UNKNOWN
+    relay_timestamp: datetime | None = None
+    relay_stale: bool | None = None
+    input_rate_hz: float | None = None
+    output_rate_hz: float | None = None
+    last_input_age_ms: float | None = None
+    max_input_gap_ms: float | None = None
+    lab_stamp_age_ms: float | None = None
+    origin_sent: bool | None = None
+    rigid_body_id: str | None = None
+    ev_pos_fused: bool | None = None
+    ev_hgt_fused: bool | None = None
+    ev_yaw_fused: bool | None = None
+    fusion_freshness: Freshness = Freshness.UNKNOWN
+    fusion_timestamp: datetime | None = None
+    origin_valid: bool | None = None
+    origin_freshness: Freshness = Freshness.UNKNOWN
 
 
 class VehicleDomainState(DomainMetadata):
@@ -188,6 +245,8 @@ class VehicleDomainState(DomainMetadata):
     battery_current_a: float | None = None
     battery_power_w: float | None = None
     battery_warning: int | None = None
+    # Present only for profiles whose PX4 positions from external vision.
+    external_vision: ExternalVisionState | None = None
 
 
 class ControlDomainState(DomainMetadata):
@@ -231,12 +290,19 @@ class InspectionStartEligibility(ContractModel):
 
 
 class MissionSpecificationIdentity(ContractModel):
-    active_path: str | None = None
-    canonical_path: str | None = None
-    label: str | None = None
-    content_hash: str | None = None
-    canonical_loaded: bool | None = None
-    configuration_profile: str = "unknown"
+    catalog_id: str | None = None
+    catalog_hash: str | None = None
+    entry_hash: str | None = None
+    specification_asset_id: str | None = None
+    behavior_tree_asset_ids: list[str] = Field(default_factory=list)
+    default_catalog_id: str | None = None
+    classification: Literal["production", "experimental", "test", "legacy", "unknown"] = "unknown"
+    compatible_profiles: list[str] = Field(default_factory=list)
+    active_profile: str = "unknown"
+    temporary_override: bool = False
+    experimental: bool = False
+    experimental_warning: str | None = None
+    catalog_ready: bool = False
     load_error: str | None = None
 
 
